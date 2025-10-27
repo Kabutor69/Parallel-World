@@ -3,7 +3,7 @@ const app = express();
 app.get("/", (req, res) => res.send("Bot is alive!"));
 app.listen(3000, () => console.log("🌐 Keep-alive web server running"));
 
-const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, ActivityType } = require("discord.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -47,6 +47,16 @@ leave(client);
 client.once("ready", async () => {
   console.log(`${client.user.tag} is online!`);
 
+client.user.setPresence({
+    activities: [
+      {
+        name: "Parallel World",
+        type: ActivityType.Watching,
+      },
+    ],
+    status: "online",
+  });
+  
   const commands = [
     {
       name: "rank",
