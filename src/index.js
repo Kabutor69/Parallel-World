@@ -47,16 +47,6 @@ leave(client);
 client.once("ready", async () => {
   console.log(`${client.user.tag} is online!`);
 
-  client.user.setPresence({
-    activities: [
-      {
-        name: "Parallel World",
-        type: ActivityType.Watching,
-      },
-    ],
-    status: "online",
-  });
-
   const commands = [
     {
       name: "rank",
