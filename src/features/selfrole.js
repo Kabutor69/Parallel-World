@@ -1,7 +1,8 @@
-const { PermissionFlagsBits, EmbedBuilder } = require("discord.js");
+const { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const SelfRole = require("../models/selfrole");
 
 module.exports = (client) => {
+  
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return;
     if (interaction.commandName !== "selfrole") return;
@@ -26,7 +27,7 @@ module.exports = (client) => {
 
       const channel = interaction.options.getChannel("channel");
       const title = interaction.options.getString("title") || "Self Roles";
-      const description = interaction.options.getString("description") || "React to get your roles!";
+      const description = interaction.options.getString("description") || "Click buttons below to get roles!";
 
       const roleOptions = [];
       for (let i = 1; i <= 25; i++) {
@@ -86,37 +87,39 @@ module.exports = (client) => {
         });
       }
 
+      let embedDescription = description + "\n\n";
+      for (const data of roleData) {
+        embedDescription += `${data.emoji} **${data.roleName}**\n`;
+      }
+      embedDescription += "\n*React to respected emoji to get role*";
+
       const embed = new EmbedBuilder()
-        .setColor("#7289da")
         .setTitle(title)
-        .setDescription(description + "\n\n**Available Roles:**")
-        .setFooter({ text: "React to get or remove roles" })
+        .setDescription(embedDescription)
+        .setColor("#7289da")
+        .setFooter({ text: "Click buttons below to get roles" })
         .setTimestamp();
 
+      const buttons = [];
       for (const data of roleData) {
-        embed.addFields({
-          name: `${data.emoji} ${data.roleName}`,
-          value: `React with ${data.emoji} to get this role`,
-          inline: false,
-        });
+        const button = new ButtonBuilder()
+          .setCustomId(`selfrole_${data.roleId}`)
+          .setEmoji(data.emojiId || data.emoji)
+          .setStyle(ButtonStyle.Secondary);
+        
+        buttons.push(button);
       }
 
-      const message = await channel.send({ embeds: [embed] });
-
-      for (const data of roleData) {
-        try {
-          if (data.emojiId) {
-            await message.react(data.emojiId);
-          } else {
-            await message.react(data.emoji);
-          }
-        } catch (error) {
-          console.error(`Failed to add reaction ${data.emoji}:`, error.message);
-          return await interaction.editReply({
-            content: `❌ Failed to add reaction ${data.emoji}. Make sure it's a valid emoji!`,
-          });
-        }
+      const rows = [];
+      for (let i = 0; i < buttons.length; i += 5) {
+        const row = new ActionRowBuilder().addComponents(buttons.slice(i, i + 5));
+        rows.push(row);
       }
+
+      const message = await channel.send({ 
+        embeds: [embed],
+        components: rows
+      });
 
       const selfRoleDoc = new SelfRole({
         guildId: interaction.guild.id,
@@ -156,109 +159,63 @@ module.exports = (client) => {
     }
   });
 
-  client.on("messageReactionAdd", async (reaction, user) => {
-    if (user.bot) return;
-
-    if (reaction.partial) {
-      try {
-        await reaction.fetch();
-      } catch (error) {
-        console.error("Error fetching reaction:", error);
-        return;
-      }
-    }
+  client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isButton()) return;
+    if (!interaction.customId.startsWith("selfrole_")) return;
 
     try {
+      const roleId = interaction.customId.replace("selfrole_", "");
+      
       const selfRole = await SelfRole.findOne({
-        guildId: reaction.message.guild.id,
-        messageId: reaction.message.id,
+        guildId: interaction.guild.id,
+        messageId: interaction.message.id,
       });
 
       if (!selfRole) return;
 
-      const emojiIdentifier = reaction.emoji.id || reaction.emoji.name;
-      const roleConfig = selfRole.roles.find(r => {
-        if (r.emojiId) {
-          return r.emojiId === emojiIdentifier;
-        }
-        return r.emojiName === emojiIdentifier;
-      });
-
+      const roleConfig = selfRole.roles.find(r => r.roleId === roleId);
       if (!roleConfig) return;
 
-      const member = await reaction.message.guild.members.fetch(user.id);
-      const role = reaction.message.guild.roles.cache.get(roleConfig.roleId);
+      const member = interaction.member;
+      const role = interaction.guild.roles.cache.get(roleConfig.roleId);
 
       if (!role) {
-        console.error(`Role ${roleConfig.roleId} not found`);
-        return;
-      }
-
-      if (!member.roles.cache.has(role.id)) {
-        await member.roles.add(role);
-        console.log(`✅ Added role ${role.name} to ${user.tag}`);
-
-        try {
-          await user.send(`✅ You have been given the **${role.name}** role in **${reaction.message.guild.name}**!`);
-        } catch (error) {
-        }
-      }
-
-    } catch (error) {
-      console.error("Error handling reaction add:", error);
-    }
-  });
-
-  client.on("messageReactionRemove", async (reaction, user) => {
-    if (user.bot) return;
-
-    if (reaction.partial) {
-      try {
-        await reaction.fetch();
-      } catch (error) {
-        console.error("Error fetching reaction:", error);
-        return;
-      }
-    }
-
-    try {
-      const selfRole = await SelfRole.findOne({
-        guildId: reaction.message.guild.id,
-        messageId: reaction.message.id,
-      });
-
-      if (!selfRole) return;
-
-      const emojiIdentifier = reaction.emoji.id || reaction.emoji.name;
-      const roleConfig = selfRole.roles.find(r => {
-        if (r.emojiId) {
-          return r.emojiId === emojiIdentifier;
-        }
-        return r.emojiName === emojiIdentifier;
-      });
-
-      if (!roleConfig) return;
-
-      const member = await reaction.message.guild.members.fetch(user.id);
-      const role = reaction.message.guild.roles.cache.get(roleConfig.roleId);
-
-      if (!role) {
-        console.error(`Role ${roleConfig.roleId} not found`);
-        return;
+        return await interaction.reply({
+          content: "❌ Role not found!",
+          ephemeral: true,
+        });
       }
 
       if (member.roles.cache.has(role.id)) {
         await member.roles.remove(role);
-        console.log(`✅ Removed role ${role.name} from ${user.tag}`);
-
-        try {
-          await user.send(`❌ The **${role.name}** role has been removed from you in **${reaction.message.guild.name}**.`);
-        } catch (error) {
-        }
+        await interaction.reply({
+          content: `✅ Removed the **${role.name}** role from you!`,
+          ephemeral: true,
+        });
+        console.log(`✅ Removed role ${role.name} from ${interaction.user.tag}`);
+      } else {
+        await member.roles.add(role);
+        await interaction.reply({
+          content: `✅ You have been given the **${role.name}** role!`,
+          ephemeral: true,
+        });
+        console.log(`✅ Added role ${role.name} to ${interaction.user.tag}`);
       }
 
     } catch (error) {
-      console.error("Error handling reaction remove:", error);
+      console.error("Error handling button:", error);
+      try {
+        if (!interaction.replied) {
+          await interaction.reply({
+            content: "❌ An error occurred while assigning the role.",
+            ephemeral: true,
+          });
+        }
+      } catch (e) {
+        console.error("Could not send error:", e);
+      }
     }
   });
+
+  console.log("✅ Self-role system (button-based) initialized!");
 };
