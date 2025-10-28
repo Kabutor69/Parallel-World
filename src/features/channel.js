@@ -8,7 +8,7 @@ const {
   EmbedBuilder,
   ChannelType,
 } = require("discord.js");
-const ChannelConfig = require("../models/channelconfig");
+const ChannelConfig = require("../models/channelConfig");
 
 module.exports = (client) => {
  
