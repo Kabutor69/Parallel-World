@@ -214,7 +214,20 @@ module.exports = (client) => {
         .setFooter({ text: `Timed out by ${interaction.user.tag}` })
         .setTimestamp();
 
-      await interaction.editReply({ embeds: [successEmbed] });
+      const replyMessage = await interaction.editReply({ embeds: [successEmbed] });
+
+   
+      setTimeout(async () => {
+        try {
+          const fetchedMessage = await interaction.channel.messages.fetch(replyMessage.id);
+          if (fetchedMessage) {
+              await fetchedMessage.delete();
+          }
+        } catch (deleteError) {
+        
+        }
+      }, durationMs);
+
     } catch (error) {
       console.error("Timeout command error:", error);
 
