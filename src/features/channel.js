@@ -31,6 +31,9 @@ module.exports = (client) => {
         { label: "👋 Leave", value: "leave" },
         { label: "🧾 Log", value: "log" },
         { label: "🎉 Welcome", value: "welcome" },
+        { label: "📜 rules for putted in welcome message", value: "rules" },
+        { label: "🏷️ selfrole for putted in welcome message", value: "selfrole" },
+        { label: "💬 general chat for putted in welcome message", value: "general" },
       ]);
 
     const featureRow = new ActionRowBuilder().addComponents(featureMenu);
