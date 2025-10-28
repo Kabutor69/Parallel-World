@@ -38,71 +38,99 @@ module.exports = (client) => {
       welcome: currentConfig?.welcome || null,
     });
 
-    const logSelect = new ChannelSelectMenuBuilder()
-      .setCustomId(`channel_log_${sessionId}`)
-      .setPlaceholder("Feature 1: Logs")
-      .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
-      .setMinValues(0)
-      .setMaxValues(1);
+    const buildComponents = (showDone = false) => {
+      const logSelect = new ChannelSelectMenuBuilder()
+        .setCustomId(`channel_log_${sessionId}`)
+        .setPlaceholder("📋 Feature 1: Log")
+        .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        .setMinValues(0)
+        .setMaxValues(1);
 
-    const birthdaySelect = new ChannelSelectMenuBuilder()
-      .setCustomId(`channel_birthday_${sessionId}`)
-      .setPlaceholder("Feature 2: Birthday Wishes")
-      .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
-      .setMinValues(0)
-      .setMaxValues(1);
+      const birthdaySelect = new ChannelSelectMenuBuilder()
+        .setCustomId(`channel_birthday_${sessionId}`)
+        .setPlaceholder("🎂 Feature 2: Birthday")
+        .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        .setMinValues(0)
+        .setMaxValues(1);
 
-    const inviteSelect = new ChannelSelectMenuBuilder()
-      .setCustomId(`channel_invite_${sessionId}`)
-      .setPlaceholder("Feature 3: Invite Tracking")
-      .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
-      .setMinValues(0)
-      .setMaxValues(1);
+      const inviteSelect = new ChannelSelectMenuBuilder()
+        .setCustomId(`channel_invite_${sessionId}`)
+        .setPlaceholder("📨 Feature 3: Invite Tracker")
+        .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        .setMinValues(0)
+        .setMaxValues(1);
 
-    const leaveSelect = new ChannelSelectMenuBuilder()
-      .setCustomId(`channel_leave_${sessionId}`)
-      .setPlaceholder("Feature 4: Leave Messages")
-      .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
-      .setMinValues(0)
-      .setMaxValues(1);
+      const leaveSelect = new ChannelSelectMenuBuilder()
+        .setCustomId(`channel_leave_${sessionId}`)
+        .setPlaceholder("👋 Feature 4: Leave")
+        .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        .setMinValues(0)
+        .setMaxValues(1);
 
-    const welcomeSelect = new ChannelSelectMenuBuilder()
-      .setCustomId(`channel_welcome_${sessionId}`)
-      .setPlaceholder("Feature 5: Welcome Messages")
-      .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
-      .setMinValues(0)
-      .setMaxValues(1);
+      const welcomeSelect = new ChannelSelectMenuBuilder()
+        .setCustomId(`channel_welcome_${sessionId}`)
+        .setPlaceholder("🎉 Feature 5: Welcome")
+        .setChannelTypes([ChannelType.GuildText, ChannelType.GuildAnnouncement])
+        .setMinValues(0)
+        .setMaxValues(1);
 
-    const doneButton = new ButtonBuilder()
-      .setCustomId(`done_${sessionId}`)
-      .setLabel("Done - Review Selections")
-      .setStyle(ButtonStyle.Primary);
+      const rows = [
+        new ActionRowBuilder().addComponents(logSelect),
+        new ActionRowBuilder().addComponents(birthdaySelect),
+        new ActionRowBuilder().addComponents(inviteSelect),
+        new ActionRowBuilder().addComponents(leaveSelect),
+        new ActionRowBuilder().addComponents(welcomeSelect),
+      ];
 
-    const rows = [
-      new ActionRowBuilder().addComponents(logSelect),
-      new ActionRowBuilder().addComponents(birthdaySelect),
-      new ActionRowBuilder().addComponents(inviteSelect),
-      new ActionRowBuilder().addComponents(leaveSelect),
-      new ActionRowBuilder().addComponents(welcomeSelect),
-    ];
+      if (showDone) {
+        const doneButton = new ButtonBuilder()
+          .setCustomId(`done_${sessionId}`)
+          .setLabel("✅ Done")
+          .setStyle(ButtonStyle.Success);
 
-    let description = "**Select channels for following features:**\n\n";
-    description += `**Feature 1: Log**\n`;
-    description += `**Feature 2: Birthday**\n`;
-    description += `**Feature 3: Invite Tracker**\n`;
-    description += `**Feature 4: Leave**\n`;
-    description += `**Feature 5: Welcome**\n\n`;
-    description += "*Continue like this till all features are mentioned*\n\n";
-    description += "**Click 'Done' when you've made your selections**";
+        const cancelButton = new ButtonBuilder()
+          .setCustomId(`cancel_${sessionId}`)
+          .setLabel("❌ Cancel")
+          .setStyle(ButtonStyle.Danger);
 
-    const embed = new EmbedBuilder()
-      .setTitle("Select channels for following features")
-      .setDescription(description)
-      .setColor("#5865F2");
+        rows.push(new ActionRowBuilder().addComponents(doneButton, cancelButton));
+      }
+
+      return rows;
+    };
+
+    const buildEmbed = (selections) => {
+      let description = "**Select channels for following features:**\n\n";
+      description += `📋 **Feature 1: Log**\n`;
+      description += `${selections.log ? `└ <#${selections.log}>` : "└ *Not selected*"}\n\n`;
+      
+      description += `🎂 **Feature 2: Birthday**\n`;
+      description += `${selections.birthday ? `└ <#${selections.birthday}>` : "└ *Not selected*"}\n\n`;
+      
+      description += `📨 **Feature 3: Invite Tracker**\n`;
+      description += `${selections.invite ? `└ <#${selections.invite}>` : "└ *Not selected*"}\n\n`;
+      
+      description += `👋 **Feature 4: Leave**\n`;
+      description += `${selections.leave ? `<#${selections.leave}>` : "└ *Not selected*"}\n\n`;
+      
+      description += `🎉 **Feature 5: Welcome**\n`;
+      description += `${selections.welcome ? `└ <#${selections.welcome}>` : "└ *Not selected*"}\n\n`;
+      
+      description += "*Continue like this till all features are mentioned*\n\n";
+      description += "**Use the dropdowns below to select channels**";
+
+      return new EmbedBuilder()
+        .setTitle("Select channels for following features")
+        .setDescription(description)
+        .setColor("#5865F2")
+        .setFooter({ text: "Click 'Done' when you've made your selections" });
+    };
+
+    const selections = pendingSelections.get(sessionId);
 
     await interaction.reply({
-      embeds: [embed],
-      components: rows,
+      embeds: [buildEmbed(selections)],
+      components: buildComponents(false),
       ephemeral: true,
     });
 
@@ -129,27 +157,9 @@ module.exports = (client) => {
         selections[feature] = i.values.length > 0 ? i.values[0] : null;
         pendingSelections.set(sessionId, selections);
 
-        const buttonRow = new ActionRowBuilder().addComponents(doneButton);
-
-        let updateDesc = "**Select channels for following features:**\n\n";
-        updateDesc += `**Feature 1: Log** - ${selections.log ? `<#${selections.log}>` : "*Not selected*"}\n`;
-        updateDesc += `**Feature 2: Birthday** - ${selections.birthday ? `<#${selections.birthday}>` : "*Not selected*"}\n`;
-        updateDesc += `**Feature 3: Invite Tracker** - ${selections.invite ? `<#${selections.invite}>` : "*Not selected*"}\n`;
-        updateDesc += `**Feature 4: Leave** - ${selections.leave ? `<#${selections.leave}>` : "*Not selected*"}\n`;
-        updateDesc += `**Feature 5: Welcome** - ${selections.welcome ? `<#${selections.welcome}>` : "*Not selected*"}\n\n`;
-        updateDesc += "*Continue like this till all features are mentioned*\n\n";
-        updateDesc += "**Click 'Done' when you've made your selections**";
-
-        const updatedEmbed = new EmbedBuilder()
-          .setTitle("Select channels for following features")
-          .setDescription(updateDesc)
-          .setColor("#5865F2");
-
-        const allRows = [...rows, buttonRow];
-
         await i.update({
-          embeds: [updatedEmbed],
-          components: allRows,
+          embeds: [buildEmbed(selections)],
+          components: buildComponents(true),
         });
       }
 
@@ -161,31 +171,47 @@ module.exports = (client) => {
 
         let confirmDesc = "**Review your selections:**\n\n";
         confirmDesc += `📋 **Logs:** ${selections.log ? `<#${selections.log}>` : "*Disabled*"}\n`;
-        confirmDesc += `🎂 **Birthday Wishes:** ${selections.birthday ? `<#${selections.birthday}>` : "*Disabled*"}\n`;
-        confirmDesc += `📨 **Invite Tracking:** ${selections.invite ? `<#${selections.invite}>` : "*Disabled*"}\n`;
-        confirmDesc += `👋 **Leave Messages:** ${selections.leave ? `<#${selections.leave}>` : "*Disabled*"}\n`;
-        confirmDesc += `🎉 **Welcome Messages:** ${selections.welcome ? `<#${selections.welcome}>` : "*Disabled*"}\n\n`;
+        confirmDesc += `🎂 **Birthday:** ${selections.birthday ? `<#${selections.birthday}>` : "*Disabled*"}\n`;
+        confirmDesc += `📨 **Invite Tracker:** ${selections.invite ? `<#${selections.invite}>` : "*Disabled*"}\n`;
+        confirmDesc += `👋 **Leave:** ${selections.leave ? `<#${selections.leave}>` : "*Disabled*"}\n`;
+        confirmDesc += `🎉 **Welcome:** ${selections.welcome ? `<#${selections.welcome}>` : "*Disabled*"}\n\n`;
         confirmDesc += "*Features without channels will not work*";
 
         const confirmEmbed = new EmbedBuilder()
-          .setTitle("Review Configuration")
+          .setTitle("📝 Review Configuration")
           .setDescription(confirmDesc)
           .setColor("#FEE75C");
 
         const buttonRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId(`confirm_${sessionId}`)
-            .setLabel("Confirm")
+            .setLabel("✅ Confirm")
             .setStyle(ButtonStyle.Success),
           new ButtonBuilder()
-            .setCustomId(`cancel_${sessionId}`)
-            .setLabel("Cancel")
+            .setCustomId(`back_${sessionId}`)
+            .setLabel("◀️ Back")
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId(`cancel_final_${sessionId}`)
+            .setLabel("❌ Cancel")
             .setStyle(ButtonStyle.Danger)
         );
 
         await i.update({
           embeds: [confirmEmbed],
           components: [buttonRow],
+        });
+      }
+
+      else if (i.isButton() && i.customId.startsWith("back_")) {
+        const [_, sid] = i.customId.split("_");
+        if (sid !== sessionId) return;
+
+        const selections = pendingSelections.get(sessionId);
+
+        await i.update({
+          embeds: [buildEmbed(selections)],
+          components: buildComponents(true),
         });
       }
 
@@ -212,10 +238,10 @@ module.exports = (client) => {
 
         let resultDesc = "**✅ Configuration saved successfully!**\n\n";
         resultDesc += `📋 **Logs:** ${selections.log ? `<#${selections.log}>` : "*Disabled*"}\n`;
-        resultDesc += `🎂 **Birthday Wishes:** ${selections.birthday ? `<#${selections.birthday}>` : "*Disabled*"}\n`;
-        resultDesc += `📨 **Invite Tracking:** ${selections.invite ? `<#${selections.invite}>` : "*Disabled*"}\n`;
-        resultDesc += `👋 **Leave Messages:** ${selections.leave ? `<#${selections.leave}>` : "*Disabled*"}\n`;
-        resultDesc += `🎉 **Welcome Messages:** ${selections.welcome ? `<#${selections.welcome}>` : "*Disabled*"}\n\n`;
+        resultDesc += `🎂 **Birthday:** ${selections.birthday ? `<#${selections.birthday}>` : "*Disabled*"}\n`;
+        resultDesc += `📨 **Invite Tracker:** ${selections.invite ? `<#${selections.invite}>` : "*Disabled*"}\n`;
+        resultDesc += `👋 **Leave:** ${selections.leave ? `<#${selections.leave}>` : "*Disabled*"}\n`;
+        resultDesc += `🎉 **Welcome:** ${selections.welcome ? `<#${selections.welcome}>` : "*Disabled*"}\n\n`;
         resultDesc += "*Features without channels will not work*";
 
         const successEmbed = new EmbedBuilder()
@@ -236,10 +262,7 @@ module.exports = (client) => {
         console.log(`✅ ${interaction.user.tag} updated channel configuration for ${interaction.guild.name}`);
       }
 
-      else if (i.isButton() && i.customId.startsWith("cancel_")) {
-        const [_, sid] = i.customId.split("_");
-        if (sid !== sessionId) return;
-
+      else if (i.isButton() && (i.customId.startsWith("cancel_") || i.customId.startsWith("cancel_final_"))) {
         const cancelEmbed = new EmbedBuilder()
           .setTitle("❌ Configuration Cancelled")
           .setDescription("No changes were made to the channel configuration.")
