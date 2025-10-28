@@ -20,7 +20,7 @@ module.exports = (client) => {
 
     const welcomeEmbed = new EmbedBuilder()
       .setColor("#7289DA")
-      .setTitle(`🌌 Welcome to Parallel World, ${member.user.username}!`)
+      .setTitle(`🌌 Welcome to ${member.guild.name}, ${member.user.username}!`)
       .setDescription(
         `A reality where possibilities diverge! We're thrilled to have you join our unique dimension. Get ready to explore the unknown.\n\n` +
           `**Start your journey here:**\n` +
@@ -58,7 +58,7 @@ module.exports = (client) => {
     try {
       const dmEmbed = new EmbedBuilder(welcomeEmbed)
         .setDescription(
-          `Welcome to Parallel World! We've sent this to your DMs so you don't miss it.\n\n` +
+          `Welcome to ${member.guild.name}! We've sent this to your DMs so you don't miss it.\n\n` +
             `We look forward to seeing you around. **Enjoy your stay!**`
         )
         .setImage(null)
