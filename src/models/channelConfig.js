@@ -7,6 +7,9 @@ const channelConfigSchema = new mongoose.Schema({
   invite: { type: String, default: null },
   leave: { type: String, default: null },
   welcome: { type: String, default: null },
+  rules: { type: String, default: null },
+  selfrole: { type: String, default: null },
+  general: { type: String, default: null },
   updatedBy: { type: String, required: true },
   updatedAt: { type: Date, default: Date.now },
 });
