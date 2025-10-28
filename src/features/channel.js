@@ -1,10 +1,9 @@
 const {
   PermissionFlagsBits,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
+  ChannelSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
-  ChannelSelectMenuBuilder,
   ComponentType,
   EmbedBuilder,
 } = require("discord.js");
@@ -22,125 +21,107 @@ module.exports = (client) => {
       });
     }
 
-    const featureMenu = new StringSelectMenuBuilder()
-      .setCustomId("featureSelect")
-      .setPlaceholder("Select a feature to set its channel")
-      .addOptions([
-        { label: "🎂 Birthday", value: "birthday" },
-        { label: "📨 Invite Tracker", value: "invite" },
-        { label: "👋 Leave", value: "leave" },
-        { label: "🧾 Log", value: "log" },
-        { label: "🎉 Welcome", value: "welcome" },
-      ]);
-
-    const featureRow = new ActionRowBuilder().addComponents(featureMenu);
+    const features = [
+      { label: "🧾 Log", value: "log" },
+      { label: "🎉 Welcome", value: "welcome" },
+      { label: "👋 Leave", value: "leave" },
+      { label: "📨 Invite Tracker", value: "invite" },
+      { label: "🎂 Birthday", value: "birthday" },
+    ];
 
     const embed = new EmbedBuilder()
-      .setTitle("📡 Channel Configuration")
-      .setDescription("Select a feature to assign a channel for.")
+      .setTitle("⚙️ Channel Configuration")
+      .setDescription("Select channels for the following features:")
       .setColor("Blue");
+
+    const channelRows = features.map((f) =>
+      new ActionRowBuilder().addComponents(
+        new ChannelSelectMenuBuilder()
+          .setCustomId(`set_${f.value}`)
+          .setPlaceholder(`Select channel for ${f.label}`)
+          .setMinValues(1)
+          .setMaxValues(1)
+      )
+    );
+
+    const buttonRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("confirm_all")
+        .setLabel("✅ Confirm")
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId("cancel_all")
+        .setLabel("❌ Cancel")
+        .setStyle(ButtonStyle.Danger)
+    );
 
     await interaction.reply({
       embeds: [embed],
-      components: [featureRow],
+      components: [...channelRows, buttonRow],
       ephemeral: true,
     });
 
     const msg = await interaction.fetchReply();
+    const selections = {};
 
-    const featureCollector = msg.createMessageComponentCollector({
-      componentType: ComponentType.StringSelect,
-      time: 60_000,
+    const collector = msg.createMessageComponentCollector({
+      componentType: ComponentType.ChannelSelect,
+      time: 5 * 60_000,
     });
 
-    featureCollector.on("collect", async (i) => {
+    collector.on("collect", async (i) => {
       if (i.user.id !== interaction.user.id)
         return i.reply({ content: "This menu isn't for you.", ephemeral: true });
 
-      const feature = i.values[0];
+      const feature = i.customId.replace("set_", "");
+      const channelId = i.values[0];
+      selections[feature] = channelId;
 
-      const channelSelect = new ChannelSelectMenuBuilder()
-        .setCustomId(`channelSelect_${feature}`)
-        .setPlaceholder("Select a channel for this feature")
-        .setMinValues(1)
-        .setMaxValues(1);
-
-      const channelRow = new ActionRowBuilder().addComponents(channelSelect);
-
-      const step2 = new EmbedBuilder()
-        .setTitle(`⚙️ Configure "${feature}" Channel`)
-        .setDescription("Select a channel below.")
-        .setColor("Green");
-
-      await i.update({ embeds: [step2], components: [channelRow] });
-
-      const channelCollector = msg.createMessageComponentCollector({
-        componentType: ComponentType.ChannelSelect,
-        time: 60_000,
+      await i.reply({
+        content: `✅ Set **${feature}** channel to <#${channelId}>`,
+        ephemeral: true,
       });
+    });
 
-      channelCollector.on("collect", async (ci) => {
-        if (ci.user.id !== interaction.user.id)
-          return ci.reply({ content: "This menu isn't for you.", ephemeral: true });
+    const buttonCollector = msg.createMessageComponentCollector({
+      componentType: ComponentType.Button,
+      time: 5 * 60_000,
+    });
 
-        const channelId = ci.values[0];
+    buttonCollector.on("collect", async (btn) => {
+      if (btn.user.id !== interaction.user.id)
+        return btn.reply({ content: "This button isn't for you.", ephemeral: true });
 
-        const confirmRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId(`confirm_${feature}_${channelId}`)
-            .setLabel("✅ Confirm")
-            .setStyle(ButtonStyle.Success),
-          new ButtonBuilder()
-            .setCustomId(`cancel_${feature}`)
-            .setLabel("❌ Cancel")
-            .setStyle(ButtonStyle.Danger)
+      if (btn.customId === "confirm_all") {
+        if (Object.keys(selections).length === 0)
+          return btn.reply({ content: "⚠️ No channels selected!", ephemeral: true });
+
+        await ChannelConfig.findOneAndUpdate(
+          { guildId: interaction.guild.id },
+          { $set: selections },
+          { upsert: true, new: true }
         );
 
         const confirmEmbed = new EmbedBuilder()
-          .setTitle("Confirm Channel Selection")
+          .setTitle("✅ Channels Saved Successfully")
           .setDescription(
-            `Feature: **${feature}**\nSelected channel: <#${channelId}>\n\nClick **Confirm** to save or **Cancel** to discard.`
+            Object.entries(selections)
+              .map(([feature, id]) => `**${feature}:** <#${id}>`)
+              .join("\n")
           )
-          .setColor("Yellow");
+          .setColor("Green");
 
-        await ci.update({
-          embeds: [confirmEmbed],
-          components: [confirmRow],
-        });
+        await btn.update({ embeds: [confirmEmbed], components: [] });
+      }
 
-        const buttonCollector = msg.createMessageComponentCollector({
-          componentType: ComponentType.Button,
-          time: 60_000,
-        });
+      if (btn.customId === "cancel_all") {
+        const cancelEmbed = new EmbedBuilder()
+          .setTitle("❌ Setup Cancelled")
+          .setDescription("No changes were saved.")
+          .setColor("Red");
 
-        buttonCollector.on("collect", async (bi) => {
-          if (bi.user.id !== interaction.user.id)
-            return bi.reply({ content: "This button isn't for you.", ephemeral: true });
-
-          if (bi.customId.startsWith("confirm_")) {
-            const update = { [feature]: channelId };
-            await ChannelConfig.findOneAndUpdate(
-              { guildId: interaction.guild.id },
-              { $set: update },
-              { upsert: true, new: true }
-            );
-
-            const doneEmbed = new EmbedBuilder()
-              .setTitle("✅ Channel Saved")
-              .setDescription(`Feature **${feature}** will now use <#${channelId}>.`)
-              .setColor("Green");
-
-            await bi.update({ embeds: [doneEmbed], components: [] });
-          } else {
-            const cancelEmbed = new EmbedBuilder()
-              .setTitle("❌ Cancelled")
-              .setDescription("No changes were made.")
-              .setColor("Red");
-
-            await bi.update({ embeds: [cancelEmbed], components: [] });
-          }
-        });
-      });
+        await btn.update({ embeds: [cancelEmbed], components: [] });
+      }
     });
   });
 };
