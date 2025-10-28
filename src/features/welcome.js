@@ -6,10 +6,17 @@ const WELCOME_GIF_URL =
 
 module.exports = (client) => {
   client.on(Events.GuildMemberAdd, async (member) => {
+  const RULES_CHANNEL_ID = await getChannelId(member.guild.id, "rules");
+  const SELFROLE_CHANNEL_ID = await getChannelId(member.guild.id, "selfrole");
+  const GENERAL_CHANNEL_ID = await getChannelId(member.guild.id, "general");
+    
     const avatarURL = member.user.displayAvatarURL({
       dynamic: true,
       size: 256,
     });
+  const rulesMention = RULES_CHANNEL_ID ? `<#${RULES_CHANNEL_ID}>` : "`not set`";
+  const selfRoleMention = SELFROLE_CHANNEL_ID ? `<#${SELFROLE_CHANNEL_ID}>` : "`not set`";
+  const generalMention = GENERAL_CHANNEL_ID ? `<#${GENERAL_CHANNEL_ID}>` : "`not set`";
 
     const welcomeEmbed = new EmbedBuilder()
       .setColor("#7289DA")
@@ -17,9 +24,9 @@ module.exports = (client) => {
       .setDescription(
         `A reality where possibilities diverge! We're thrilled to have you join our unique dimension. Get ready to explore the unknown.\n\n` +
           `**Start your journey here:**\n` +
-          `> 📜 **<#1430443181958234113>:** Understand the dimensional physics.\n` +
-          `> 🏷️ ** #self-roles :** Customize your parallel identity.\n` +
-          `> 💬 **<#1430106589771075707>:** Meet fellow travelers and share your findings.`
+           `> 📜 **${rulesMention}:** Understand the dimensional physics.\n` +
+           `> 🏷️ **${selfRoleMention}:** Customize your parallel identity.\n` +
+           `> 💬 **${generalMention}:** Meet fellow travelers and share your findings.`
       )
       .setThumbnail(avatarURL)
       .setImage(WELCOME_GIF_URL)
