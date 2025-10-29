@@ -3,7 +3,13 @@ const app = express();
 app.get("/", (req, res) => res.send("Bot is alive!"));
 app.listen(3000, () => console.log("🌐 Keep-alive web server running"));
 
-const { Client, GatewayIntentBits, REST, Routes, ActivityType } = require("discord.js");
+const {
+  Client,
+  GatewayIntentBits,
+  REST,
+  Routes,
+  ActivityType,
+} = require("discord.js");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
@@ -37,6 +43,7 @@ require("./features/invtracker")(client);
 require("./features/selfrole")(client);
 require("./features/log")(client);
 require("./features/channel")(client);
+require("./features/yt")(client);
 
 const welcome = require("./features/welcome");
 welcome(client);
@@ -47,7 +54,7 @@ leave(client);
 client.once("ready", async () => {
   console.log(`${client.user.tag} is online!`);
 
-client.user.setPresence({
+  client.user.setPresence({
     activities: [
       {
         name: "Parallel World",
@@ -56,7 +63,7 @@ client.user.setPresence({
     ],
     status: "online",
   });
-  
+
   const commands = [
     {
       name: "rank",
@@ -439,6 +446,24 @@ client.user.setPresence({
     {
       name: "channel",
       description: "Set channels for different bot features (Admin only)",
+    },
+    {
+      name: "yt",
+      description: "Set YouTube updates channel",
+      options: [
+        {
+          name: "channel",
+          description: "Discord channel where updates will be sent",
+          type: 7,
+          required: true,
+        },
+        {
+          name: "yt-channel",
+          description: "YouTube channel link (e.g. https://youtube.com/@test)",
+          type: 3,
+          required: true,
+        },
+      ],
     },
   ];
 
