@@ -2,11 +2,22 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("
 const YTChannel = require("../models/YTChannel");
 const Parser = require("rss-parser");
 const parser = new Parser();
-
+const fetch = require("node-fetch");
 module.exports = async (client) => {
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     if (interaction.commandName !== "yt") return;
+
+    if (
+      interaction.user.id !== interaction.guild.ownerId &&
+      !interaction.member.permissions.has("Administrator") &&
+      !interaction.member.permissions.has("ManageGuild")
+    ) {
+      return interaction.reply({
+        content: "❌ Only server owner, admins, or moderators can set the YouTube updates channel.",
+        ephemeral: true,
+      });
+    }
 
     const discordChannel = interaction.options.getChannel("channel");
     const ytLink = interaction.options.getString("yt-channel");
@@ -30,6 +41,7 @@ module.exports = async (client) => {
       ephemeral: true,
     });
   });
+
 
   async function getChannelIdFromHandle(url) {
     try {
