@@ -111,7 +111,6 @@ module.exports = (client) => {
       .setThumbnail(member.user.displayAvatarURL())
       .addFields(
         { name: "User", value: `${member.user.tag} (${member.user.id})`, inline: true },
-        { name: "Kicked By", value: executor ? `${executor.tag}` : "Left or Unknown", inline: true },
         { name: "Joined", value: member.joinedAt ? `<t:${Math.floor(member.joinedTimestamp / 1000)}:R>` : "Unknown", inline: true }
       )
       .setTimestamp();
