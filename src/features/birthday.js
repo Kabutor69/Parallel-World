@@ -5,86 +5,91 @@ const getChannelId = require("../utils/getChannelId");
 const CHECK_INTERVAL = 60 * 60 * 1000;
 
 module.exports = (client) => {
-  const checkBirthdays = async () => {
-    try {
-      const now = new Date();
-      const today = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-        now.getDate()
-      ).padStart(2, "0")}`;
+const checkBirthdays = async () => {
+  try {
+    const now = new Date();
+    const today = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
+    const todayFull = `${now.getFullYear()}-${today}`;
 
-      const birthdays = await Birthday.find({ birthday: today });
+    const birthdays = await Birthday.find({ birthday: today });
 
-      for (const bday of birthdays) {
+    for (const bday of birthdays) {
+      try {
+        if (bday.lastWished === todayFull) continue;
+
+        const guild = client.guilds.cache.get(bday.guildId);
+        if (!guild) continue;
+
+        const BIRTHDAY_CHANNEL_ID = await getChannelId(guild.id, "birthday");
+        const channel = guild.channels.cache.get(BIRTHDAY_CHANNEL_ID);
+        if (!channel) continue;
+
+        const user = await client.users.fetch(bday.userId).catch(() => null);
+        if (!user) continue;
+
+        const member = await guild.members.fetch(bday.userId).catch(() => null);
+        if (!member) continue;
+
+        let ageText = "";
+        if (bday.year) {
+          const age = now.getFullYear() - bday.year;
+          ageText = ` They're turning **${age}** today!`;
+        }
+
+        const birthdayEmbed = new EmbedBuilder()
+          .setColor("#ff69b4")
+          .setTitle(`🎉 Happy Birthday ${user.username}! 🎂`)
+          .setDescription(
+            `Everyone wish a happy birthday to ${member}!${ageText}\n\n` +
+              `🎈 *May your day be filled with joy, laughter, and wonderful memories!* 🎈`
+          )
+          .setThumbnail(user.displayAvatarURL({ size: 256 }))
+          .setImage(
+            "https://media.tenor.com/MvPvyKfXVCwAAAAC/lucky-star-anime.gif"
+          )
+          .setFooter({ text: `🎊 Birthday: ${bday.birthday}` })
+          .setTimestamp();
+
+        await channel.send({
+          content: `@everyone 🎉`,
+          embeds: [birthdayEmbed],
+        });
+
         try {
-          const guild = client.guilds.cache.get(bday.guildId);
-          if (!guild) continue;
-          const BIRTHDAY_CHANNEL_ID = await getChannelId(guild.id, "birthday");
-          const channel = guild.channels.cache.get(BIRTHDAY_CHANNEL_ID);
-          if (!channel) continue;
-
-          const user = await client.users.fetch(bday.userId).catch(() => null);
-          if (!user) continue;
-
-          const member = await guild.members
-            .fetch(bday.userId)
-            .catch(() => null);
-          if (!member) continue;
-
-          let ageText = "";
-          if (bday.year) {
-            const age = now.getFullYear() - bday.year;
-            ageText = ` They're turning **${age}** today!`;
-          }
-
-          const birthdayEmbed = new EmbedBuilder()
+          const dmEmbed = new EmbedBuilder()
             .setColor("#ff69b4")
-            .setTitle(`🎉 Happy Birthday ${user.username}! 🎂`)
+            .setTitle(`🎂 Happy Birthday! 🎉`)
             .setDescription(
-              `Everyone wish a happy birthday to ${member}!${ageText}\n\n` +
-                `🎈 *May your day be filled with joy, laughter, and wonderful memories!* 🎈`
+              `Happy Birthday, ${user.username}! 🥳\n\n` +
+                `The entire **${guild.name}** community wishes you an amazing day filled with happiness and joy!\n\n` +
+                `Thank you for being part of our community. Have a fantastic birthday! 🎈🎊`
             )
-            .setThumbnail(user.displayAvatarURL({ size: 256 }))
+            .setThumbnail(guild.iconURL())
             .setImage(
               "https://media.tenor.com/MvPvyKfXVCwAAAAC/lucky-star-anime.gif"
             )
-            .setFooter({ text: `🎊 Birthday: ${bday.birthday}` })
+            .setFooter({ text: `From ${guild.name} with love ❤️` })
             .setTimestamp();
 
-          await channel.send({
-            content: `@everyone 🎉`,
-            embeds: [birthdayEmbed],
-          });
-
-          try {
-            const dmEmbed = new EmbedBuilder()
-              .setColor("#ff69b4")
-              .setTitle(`🎂 Happy Birthday! 🎉`)
-              .setDescription(
-                `Happy Birthday, ${user.username}! 🥳\n\n` +
-                  `The entire **${guild.name}** community wishes you an amazing day filled with happiness and joy!\n\n` +
-                  `Thank you for being part of our community. Have a fantastic birthday! 🎈🎊`
-              )
-              .setThumbnail(guild.iconURL())
-              .setImage(
-                "https://media.tenor.com/MvPvyKfXVCwAAAAC/lucky-star-anime.gif"
-              )
-              .setFooter({ text: `From ${guild.name} with love ❤️` })
-              .setTimestamp();
-
-            await user.send({ embeds: [dmEmbed] });
-          } catch (dmError) {
-            console.log(`Could not DM birthday message to ${user.tag}`);
-          }
-
-          console.log(`✅ Wished ${user.tag} happy birthday in ${guild.name}`);
-        } catch (error) {
-          console.error(`Error wishing birthday:`, error);
+          await user.send({ embeds: [dmEmbed] });
+        } catch {
+          console.log(`Could not DM birthday message to ${user.tag}`);
         }
+
+        console.log(`✅ Wished ${user.tag} happy birthday in ${guild.name}`);
+
+        bday.lastWished = todayFull;
+        await bday.save();
+      } catch (error) {
+        console.error(`Error wishing birthday:`, error);
       }
-    } catch (error) {
-      console.error("Error checking birthdays:", error);
     }
-  };
+  } catch (error) {
+    console.error("Error checking birthdays:", error);
+  }
+};
 
   setInterval(checkBirthdays, CHECK_INTERVAL);
   setTimeout(checkBirthdays, 5000);
