@@ -5,6 +5,7 @@ const birthdaySchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   birthday: { type: String, required: true },
   year: { type: Number, default: null },
+  lastWished: { type: String, default: null }, 
 });
 
 birthdaySchema.index({ userId: 1, guildId: 1 }, { unique: true });
