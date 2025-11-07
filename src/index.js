@@ -448,23 +448,48 @@ client.once("ready", async () => {
       description: "Set channels for different bot features (Admin only)",
     },
     {
-      name: "yt",
-      description: "Set YouTube updates channel",
+  name: "yt",
+  description: "Manage YouTube channel notifications",
+  options: [
+    {
+      name: "add",
+      description: "Add a YouTube channel to track",
+      type: 1, 
       options: [
         {
           name: "channel",
-          description: "Discord channel where updates will be sent",
+          description: "Discord channel to post notifications",
           type: 7,
           required: true,
         },
         {
-          name: "yt-channel",
-          description: "YouTube channel link (e.g. https://youtube.com/@test)",
+          name: "youtube_channel",
+          description: "YouTube channel ID or URL",
           type: 3,
           required: true,
         },
       ],
     },
+    {
+      name: "remove",
+      description: "Remove a tracked YouTube channel",
+      type: 1,
+      options: [
+        {
+          name: "channel_name",
+          description: "Name of the YouTube channel to remove",
+          type: 3,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "list",
+      description: "List all tracked YouTube channels",
+      type: 1,
+    },
+  ],
+},
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
