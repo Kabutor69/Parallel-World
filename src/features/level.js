@@ -297,7 +297,7 @@ module.exports = async function (client) {
     if (cooldown.has(message.author.id)) return;
 
     cooldown.add(message.author.id);
-    setTimeout(() => cooldown.delete(message.author.id), 30000);
+    setTimeout(() => cooldown.delete(message.author.id), 15000);
 
     let profile = await Profile.findOne({
       userId: message.author.id,
