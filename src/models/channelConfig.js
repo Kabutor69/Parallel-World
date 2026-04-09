@@ -10,6 +10,8 @@ const channelConfigSchema = new mongoose.Schema({
   rules: { type: String, default: null },
   selfrole: { type: String, default: null },
   general: { type: String, default: null },
+  welcomeImage: { type: String, default: null },
+  leaveImage: { type: String, default: null },
   updatedBy: { type: String, required: true },
   updatedAt: { type: Date, default: Date.now },
 });

@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder } = require("discord.js");
 const getChannelId = require("../utils/getChannelId");
+const ChannelConfig = require("../models/channelConfig");
 
 const WELCOME_GIF_URL =
   "https://i.pinimg.com/originals/12/7e/f5/127ef50a9e6bc3cbe762cf6d3ae4987e.gif";
@@ -18,6 +19,9 @@ module.exports = (client) => {
   const selfRoleMention = SELFROLE_CHANNEL_ID ? `<#${SELFROLE_CHANNEL_ID}>` : "`not set`";
   const generalMention = GENERAL_CHANNEL_ID ? `<#${GENERAL_CHANNEL_ID}>` : "`not set`";
 
+    const config = await ChannelConfig.findOne({ guildId: member.guild.id });
+    const welcomeImageURL = config?.welcomeImage || WELCOME_GIF_URL;
+
     const welcomeEmbed = new EmbedBuilder()
       .setColor("#7289DA")
       .setTitle(`🌌 Welcome to ${member.guild.name}, ${member.user.username}!`)
@@ -29,7 +33,7 @@ module.exports = (client) => {
            `> 💬 **${generalMention}:** Meet fellow travelers and share your findings.`
       )
       .setThumbnail(avatarURL)
-      .setImage(WELCOME_GIF_URL)
+      .setImage(welcomeImageURL)
       .setFooter({
         text: "Enjoy your stay in this parallel reality!",
         iconURL: member.guild.iconURL(),

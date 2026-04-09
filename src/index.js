@@ -51,6 +51,8 @@ welcome(client);
 const leave = require("./features/leave");
 leave(client);
 
+require("./features/customImage")(client);
+
 client.once("ready", async () => {
   console.log(`${client.user.tag} is online!`);
 
@@ -448,48 +450,76 @@ client.once("ready", async () => {
       description: "Set channels for different bot features (Admin only)",
     },
     {
-  name: "yt",
-  description: "Manage YouTube channel notifications",
-  options: [
-    {
-      name: "add",
-      description: "Add a YouTube channel to track",
-      type: 1, 
+      name: "yt",
+      description: "Manage YouTube channel notifications",
       options: [
         {
-          name: "channel",
-          description: "Discord channel to post notifications",
-          type: 7,
-          required: true,
+          name: "add",
+          description: "Add a YouTube channel to track",
+          type: 1,
+          options: [
+            {
+              name: "channel",
+              description: "Discord channel to post notifications",
+              type: 7,
+              required: true,
+            },
+            {
+              name: "youtube_channel",
+              description: "YouTube channel ID or URL",
+              type: 3,
+              required: true,
+            },
+          ],
         },
         {
-          name: "youtube_channel",
-          description: "YouTube channel ID or URL",
-          type: 3,
-          required: true,
+          name: "remove",
+          description: "Remove a tracked YouTube channel",
+          type: 1,
+          options: [
+            {
+              name: "channel_name",
+              description: "Name of the YouTube channel to remove",
+              type: 3,
+              required: true,
+            },
+          ],
+        },
+        {
+          name: "list",
+          description: "List all tracked YouTube channels",
+          type: 1,
         },
       ],
     },
     {
-      name: "remove",
-      description: "Remove a tracked YouTube channel",
-      type: 1,
+      name: "custom-image",
+      description: "Set custom images for welcome and leave messages (Admin only)",
       options: [
         {
-          name: "channel_name",
-          description: "Name of the YouTube channel to remove",
+          name: "type",
+          description: "Which message to customize",
           type: 3,
           required: true,
+          choices: [
+            { name: "Welcome Message", value: "welcome" },
+            { name: "Leave Message", value: "leave" },
+          ],
+        },
+        {
+          name: "url",
+          description: "Direct URL to the image (optional)",
+          type: 3,
+          required: false,
+        },
+        {
+          name: "upload",
+          description: "Upload an image file directly (takes priority over URL)",
+          type: 11,
+          required: false,
         },
       ],
     },
-    {
-      name: "list",
-      description: "List all tracked YouTube channels",
-      type: 1,
-    },
-  ],
-},
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);

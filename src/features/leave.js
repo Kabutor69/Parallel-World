@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder } = require("discord.js");
 const getChannelId = require("../utils/getChannelId");
+const ChannelConfig = require("../models/channelConfig");
 
 const LEAVE_GIF_URL =
   "https://i.pinimg.com/originals/f8/b5/36/f8b5364616f7058561eda22e2d2c031f.gif";
@@ -39,6 +40,9 @@ module.exports = (client) => {
         }
       }
 
+      const config = await ChannelConfig.findOne({ guildId: member.guild.id });
+      const leaveImageURL = config?.leaveImage || LEAVE_GIF_URL;
+
       const leaveEmbed = new EmbedBuilder()
         .setColor("#e74c3c")
         .setTitle(`👋 ${member.user.username} has left the server`)
@@ -56,7 +60,7 @@ module.exports = (client) => {
           }
         )
         .setThumbnail(avatarURL)
-        .setImage(LEAVE_GIF_URL)
+        .setImage(leaveImageURL)
         .setFooter({
           text: `User ID: ${member.user.id}`,
         })
