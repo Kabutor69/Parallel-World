@@ -37,6 +37,10 @@ module.exports = (client) => {
             )
             .setTimestamp();
 
+          if (reminder.imageUrl) {
+            reminderEmbed.setImage(reminder.imageUrl);
+          }
+
           await channel.send({
             content: user ? `Hey ${user}, here is your reminder!` : "Reminder!",
             embeds: [reminderEmbed],
@@ -72,6 +76,7 @@ module.exports = (client) => {
         const message = options.getString("message");
         const timeInput = options.getString("time");
         const targetChannel = options.getChannel("channel") || interaction.channel;
+        const image = options.getAttachment("image");
 
         let remindDate;
 
@@ -109,6 +114,7 @@ module.exports = (client) => {
           guildId: interaction.guild.id,
           channelId: targetChannel.id,
           message: message,
+          imageUrl: image ? image.url : null,
           remindDate: remindDate,
         });
 
@@ -123,6 +129,10 @@ module.exports = (client) => {
             { name: "Time", value: `<t:${Math.floor(remindDate.getTime() / 1000)}:F> (<t:${Math.floor(remindDate.getTime() / 1000)}:R>)` }
           )
           .setTimestamp();
+
+        if (image) {
+          embed.setImage(image.url);
+        }
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
       }
@@ -145,7 +155,7 @@ module.exports = (client) => {
           .setColor("#3498db")
           .setTitle("📋 Your Reminders")
           .setDescription(reminders.map((r, i) =>
-            `**${i + 1}.** ${r.message}\n📅 <t:${Math.floor(r.remindDate.getTime() / 1000)}:F> in <#${r.channelId}>`
+            `**${i + 1}.** ${r.message}${r.imageUrl ? " 🖼️" : ""}\n📅 <t:${Math.floor(r.remindDate.getTime() / 1000)}:F> in <#${r.channelId}>`
           ).join("\n\n"))
           .setTimestamp();
 

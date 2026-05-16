@@ -537,6 +537,12 @@ client.once("ready", async () => {
               required: true,
             },
             {
+              name: "image",
+              description: "An image to include with the reminder",
+              type: 11,
+              required: false,
+            },
+            {
               name: "time",
               description: "When to remind (e.g., 10m, 1h, 1d or YYYY-MM-DD HH:MM)",
               type: 3,
