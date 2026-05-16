@@ -44,6 +44,7 @@ require("./features/selfrole")(client);
 require("./features/log")(client);
 require("./features/channel")(client);
 require("./features/yt")(client);
+require("./features/reminder")(client);
 
 const welcome = require("./features/welcome");
 welcome(client);
@@ -517,6 +518,55 @@ client.once("ready", async () => {
           description: "Upload an image file directly (takes priority over URL)",
           type: 11,
           required: false,
+        },
+      ],
+    },
+    {
+      name: "reminder",
+      description: "Manage your reminders",
+      options: [
+        {
+          name: "set",
+          description: "Set a new reminder",
+          type: 1,
+          options: [
+            {
+              name: "message",
+              description: "What to remind you about",
+              type: 3,
+              required: true,
+            },
+            {
+              name: "time",
+              description: "When to remind (e.g., 10m, 1h, 1d or YYYY-MM-DD HH:MM)",
+              type: 3,
+              required: true,
+            },
+            {
+              name: "channel",
+              description: "Channel to send the reminder to",
+              type: 7,
+              required: false,
+            },
+          ],
+        },
+        {
+          name: "list",
+          description: "List all your active reminders",
+          type: 1,
+        },
+        {
+          name: "delete",
+          description: "Delete a reminder",
+          type: 1,
+          options: [
+            {
+              name: "number",
+              description: "The number of the reminder to delete (from /reminder list)",
+              type: 4,
+              required: true,
+            },
+          ],
         },
       ],
     },
