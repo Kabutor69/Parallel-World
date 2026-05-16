@@ -37,13 +37,20 @@ module.exports = (client) => {
             )
             .setTimestamp();
 
-          if (reminder.imageUrl) {
-            reminderEmbed.setImage(reminder.imageUrl);
+          const embeds = [reminderEmbed];
+
+          if (reminder.imageUrls && reminder.imageUrls.length > 0) {
+            reminderEmbed.setImage(reminder.imageUrls[0]);
+            
+            // Add additional embeds for more images (Discord displays them together)
+            for (let i = 1; i < reminder.imageUrls.length; i++) {
+              embeds.push(new EmbedBuilder().setURL(reminderEmbed.data.url || "https://discord.com").setImage(reminder.imageUrls[i]));
+            }
           }
 
           await channel.send({
             content: user ? `Hey ${user}, here is your reminder!` : "Reminder!",
-            embeds: [reminderEmbed],
+            embeds: embeds,
           });
 
           reminder.isSent = true;
@@ -76,7 +83,15 @@ module.exports = (client) => {
         const message = options.getString("message");
         const timeInput = options.getString("time");
         const targetChannel = options.getChannel("channel") || interaction.channel;
-        const image = options.getAttachment("image");
+        
+        const imageUrls = [];
+        for (let i = 1; i <= 5; i++) {
+          const img = options.getAttachment(`image${i === 1 ? "1" : i}`);
+          // Fallback for when it was just "image" (though I renamed it in index.js)
+          const fallbackImg = i === 1 ? options.getAttachment("image") : null;
+          const finalImg = img || fallbackImg;
+          if (finalImg) imageUrls.push(finalImg.url);
+        }
 
         let remindDate;
 
@@ -114,7 +129,7 @@ module.exports = (client) => {
           guildId: interaction.guild.id,
           channelId: targetChannel.id,
           message: message,
-          imageUrl: image ? image.url : null,
+          imageUrls: imageUrls,
           remindDate: remindDate,
         });
 
@@ -130,11 +145,15 @@ module.exports = (client) => {
           )
           .setTimestamp();
 
-        if (image) {
-          embed.setImage(image.url);
+        const embeds = [embed];
+        if (imageUrls.length > 0) {
+          embed.setImage(imageUrls[0]);
+          for (let i = 1; i < imageUrls.length; i++) {
+            embeds.push(new EmbedBuilder().setImage(imageUrls[i]));
+          }
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: embeds, ephemeral: true });
       }
 
       else if (subCommand === "list") {
@@ -155,7 +174,7 @@ module.exports = (client) => {
           .setColor("#3498db")
           .setTitle("📋 Your Reminders")
           .setDescription(reminders.map((r, i) =>
-            `**${i + 1}.** ${r.message}${r.imageUrl ? " 🖼️" : ""}\n📅 <t:${Math.floor(r.remindDate.getTime() / 1000)}:F> in <#${r.channelId}>`
+            `**${i + 1}.** ${r.message}${r.imageUrls && r.imageUrls.length > 0 ? ` 🖼️ (${r.imageUrls.length})` : ""}\n📅 <t:${Math.floor(r.remindDate.getTime() / 1000)}:F> in <#${r.channelId}>`
           ).join("\n\n"))
           .setTimestamp();
 

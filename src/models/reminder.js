@@ -5,7 +5,7 @@ const reminderSchema = new mongoose.Schema({
   guildId: { type: String, required: true },
   channelId: { type: String, required: true },
   message: { type: String, required: true },
-  imageUrl: { type: String, required: false },
+  imageUrls: [{ type: String }],
   remindDate: { type: Date, required: true },
   isSent: { type: Boolean, default: false },
 });
